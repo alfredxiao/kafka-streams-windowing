@@ -1,3 +1,7 @@
+--- these two settings do not affect outcome
+set 'commit.interval.ms'='2';
+SET 'cache.max.bytes.buffering'='0';
+
 create or replace table ksql_output with
 (
   kafka_topic='ksql_output',
