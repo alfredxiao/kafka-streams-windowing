@@ -1,0 +1,2 @@
+kafka-console-consumer --bootstrap-server localhost:9092 --property "print.key=true" --property "key.separator= | " --topic output --from-beginning
+kafka-console-consumer --bootstrap-server localhost:9092 --property "print.key=true" --property "key.separator= | " --topic source --from-beginning

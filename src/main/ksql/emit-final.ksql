@@ -1,0 +1,19 @@
+create or replace table ksql_output with
+(
+  kafka_topic='ksql_output',
+  key_format='KAFKA',
+  value_format='JSON'
+) as
+select
+  k,
+  collect_list(v) as vs,
+  windowstart as winStart,
+  windowend as winEnd
+from ksql_source
+ window tumbling (size 10 minutes, grace period 1 minute)
+group by k
+emit final;
+
+create or replace stream ksql_output_stream
+as
+select * from ksql_output emit changes;
