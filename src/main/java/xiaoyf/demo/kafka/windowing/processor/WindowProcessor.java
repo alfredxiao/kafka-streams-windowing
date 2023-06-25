@@ -19,23 +19,27 @@ import xiaoyf.demo.kafka.windowing.extractor.UtcFormatTimestampExtractor;
 
 import java.time.Duration;
 
+import static xiaoyf.demo.kafka.windowing.support.Consts.INPUT_TOPIC;
+import static xiaoyf.demo.kafka.windowing.support.Consts.OUTPUT_TOPIC;
+import static xiaoyf.demo.kafka.windowing.support.Consts.WINDOWED_OUTPUT_TOPIC;
+
 @Component
 @Slf4j
 public class WindowProcessor {
 
     @Autowired
     void process(StreamsBuilder streamsBuilder) {
-        //Serde<Windowed<String>> winSerde = WindowedSerdes.timeWindowedSerdeFrom(String.class, Duration.ofMinutes(10).toMillis());
         Serde<String> stringSerde = Serdes.String();
 
         KStream<String, String> source = streamsBuilder.stream(
-                "source",
+                INPUT_TOPIC,
                 Consumed.with(new UtcFormatTimestampExtractor()));
 
-        Materialized<String, String, WindowStore<Bytes, byte[]>> aggMat =
+        Materialized<String, String, WindowStore<Bytes, byte[]>> aggregationMaterialized =
                 Materialized.<String, String, WindowStore<Bytes, byte[]>>as("aggregated-store")
                         .withKeySerde(stringSerde)
-                        .withValueSerde(stringSerde);
+                        .withValueSerde(stringSerde)
+                        .withRetention(Duration.ofDays(1));
 
         KStream<Windowed<String>, String> aggregated = source
                 .groupByKey()
@@ -48,18 +52,23 @@ public class WindowProcessor {
                             if (aggregate.isEmpty()) {
                                 return value;
                             } else {
-                                return aggregate + ", " + value;
+                                return aggregate + "," + value;
                             }
                         },
                         Named.as("aggregate"),
-                        aggMat
+                        aggregationMaterialized
                 )
-                .suppress(Suppressed.untilWindowCloses(Suppressed.BufferConfig.unbounded()))
+                .suppress(Suppressed
+                        .untilWindowCloses(Suppressed.BufferConfig.unbounded())
+                        .withName("suppress-aggregation"))
                 .toStream();
+
+        aggregated
+                .to(WINDOWED_OUTPUT_TOPIC);
 
         aggregated
                 .selectKey((k, v) -> k.key(), Named.as("win-to-norm"))
                 .peek((key, value) -> log.info("Emitting {} {}", key, value))
-                .to("output");
+                .to(OUTPUT_TOPIC);
     }
 }

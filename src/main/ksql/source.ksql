@@ -11,9 +11,10 @@ CREATE or REPLACE STREAM ksql_source (
 
 -- input using console producer
 -- alfred|{"V":"2000-01-01T02:40:01Z"}
-insert into ksql_source values('derek', '2000-01-01T04:00:00Z');
-insert into ksql_source values('derek', '2000-01-01T04:12:00Z');
 
+-- input using ksql INSERT
+insert into ksql_source values('Alfred', '2000-01-01T00:00:00Z');
+insert into ksql_source values('Alfred', '2000-01-01T00:12:00Z');
 
 -- TO view records in source with row time
 select ROWTIME, FORMAT_TIMESTAMP(FROM_UNIXTIME(rowtime), 'yyyy-MM-dd''T''HH:mm:ssZ'), K, V from ksql_source EMIT CHANGES;

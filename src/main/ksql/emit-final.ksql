@@ -18,6 +18,27 @@ from ksql_source
 group by k
 emit final;
 
-create or replace stream ksql_output_stream
-as
-select * from ksql_output emit changes;
+create or replace table ksql_output_hopping with
+(
+  kafka_topic='ksql_output_hopping',
+  key_format='KAFKA',
+  value_format='JSON'
+) as
+select
+  k,
+  collect_list(v) as vs,
+  windowstart as winStart,
+  windowend as winEnd
+from ksql_source
+ window hopping (size 10 minutes, advance by 5 minutes, grace period 0 seconds)
+group by k
+emit final;
+
+select
+  FORMAT_TIMESTAMP(FROM_UNIXTIME(rowtime), 'yyyy-MM-dd''T''HH:mm:ssZ') AS TIMESTAMP,
+  FORMAT_TIMESTAMP(FROM_UNIXTIME(windowstart), 'yyyy-MM-dd''T''HH:mm:ssZ') AS W_START,
+  FORMAT_TIMESTAMP(FROM_UNIXTIME(windowend), 'yyyy-MM-dd''T''HH:mm:ssZ') AS W_END,
+  K,
+  VS
+  from ksql_output_hopping
+EMIT CHANGES;
