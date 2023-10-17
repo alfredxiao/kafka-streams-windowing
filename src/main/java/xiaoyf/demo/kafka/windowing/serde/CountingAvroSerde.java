@@ -1,0 +1,40 @@
+package xiaoyf.demo.kafka.windowing.serde;
+
+import org.apache.kafka.common.serialization.Deserializer;
+import org.apache.kafka.common.serialization.Serde;
+import org.apache.kafka.common.serialization.Serdes;
+import org.apache.kafka.common.serialization.Serializer;
+
+import java.util.Map;
+
+public class CountingAvroSerde<T extends org.apache.avro.specific.SpecificRecord> implements Serde<T> {
+
+    private final Serde<T> inner;
+
+    public CountingAvroSerde() {
+        inner = Serdes.serdeFrom(new CountingAvroSerializer<>(), new CountingAvroDeserializer<>());
+    }
+
+    @Override
+    public Serializer<T> serializer() {
+        return inner.serializer();
+    }
+
+    @Override
+    public Deserializer<T> deserializer() {
+        return inner.deserializer();
+    }
+
+    @Override
+    public void configure(final Map<String, ?> serdeConfig, final boolean isSerdeForRecordKeys) {
+        inner.serializer().configure(serdeConfig, isSerdeForRecordKeys);
+        inner.deserializer().configure(serdeConfig, isSerdeForRecordKeys);
+    }
+
+    @Override
+    public void close() {
+        inner.serializer().close();
+        inner.deserializer().close();
+    }
+
+}

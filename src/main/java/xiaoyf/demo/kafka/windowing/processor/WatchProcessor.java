@@ -19,7 +19,7 @@ import static xiaoyf.demo.kafka.windowing.support.Consts.AGGREGATED_STORE_TOPIC;
 import static xiaoyf.demo.kafka.windowing.support.Consts.SUPPRESSION_STORE_TOPIC;
 import static xiaoyf.demo.kafka.windowing.support.Consts.WINDOWED_OUTPUT_TOPIC;
 
-@Component
+//@Component
 @Slf4j
 public class WatchProcessor {
 
